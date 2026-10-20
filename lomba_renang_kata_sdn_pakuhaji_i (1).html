@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOMBA RENANG KATA - SDN PAKUHAJI I</title>
+    <!-- Tailwind CSS for Responsive Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .font-heading {
+            font-family: 'Fredoka One', cursive;
+        }
+        
+        /* Water Effects & Pool Styling */
+        .water-bg {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Swimmer Movement & Animations */
+        .swimmer-container {
+            transition: left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .swimming-anim {
+            animation: swim 0.8s ease-in-out infinite alternate;
+        }
+        @keyframes swim {
+            0% { transform: translateY(-3px) rotate(-2deg); }
+            100% { transform: translateY(3px) rotate(2deg); }
+        }
+        .splash-anim {
+            animation: splash 0.5s ease-out;
+        }
+        @keyframes splash {
+            0% { transform: scale(0.5); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.8; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+        /* Dramatized Sinking Animation when answer is wrong */
+        .sink-anim {
+            animation: deepSink 1.6s ease-in-out forwards;
+        }
+        @keyframes deepSink {
+            0% { 
+                transform: translateY(0) rotate(0deg) scale(1); 
+                opacity: 1; 
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); 
+            }
+            30% { 
+                transform: translateY(28px) rotate(90deg) scale(0.75); 
+                opacity: 0.6; 
+                filter: blur(1px) grayscale(0.3); 
+            }
+            55% { 
+                transform: translateY(38px) rotate(180deg) scale(0.6); 
+                opacity: 0.3; 
+                filter: blur(2px) grayscale(0.6); 
+            }
+            80% { 
+                transform: translateY(15px) rotate(270deg) scale(0.85); 
+                opacity: 0.7; 
+                filter: blur(0.5px); 
+            }
+            100% { 
+                transform: translateY(0) rotate(360deg) scale(1); 
+                opacity: 1; 
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); 
+            }
+        }
+
+        /* Lane lines */
+        .lane-divider {
+            background: repeating-linear-gradient(90deg, #ef4444 0 20px, #ffffff 20px 40px, #3b82f6 40px 60px);
+            height: 6px;
+        }
+
+        /* Timer bar animation */
+        .timer-bar {
+            transition: width 1s linear, background-color 0.3s ease;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f59e0b;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
+
+    <!-- HEADER BAR -->
+    <header class="bg-sky-900/90 backdrop-blur text-white px-3 py-1.5 border-b-4 border-yellow-400 shadow-lg flex justify-between items-center z-50 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="bg-yellow-400 text-sky-950 font-black px-2.5 py-0.5 rounded-lg text-xs md:text-sm tracking-wider shadow">
+                SDN PAKUHAJI I
+            </div>
+            <h1 class="font-heading text-base md:text-xl text-yellow-300 drop-shadow hidden sm:block">
+                🏊 LOMBA RENANG KATA
+            </h1>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button id="btn-audio-toggle" onclick="game.toggleAudio()" class="bg-sky-700 hover:bg-sky-600 text-white p-1.5 md:p-2 rounded-xl border-2 border-sky-400 text-xs font-bold flex items-center gap-1 transition">
+                <span id="audio-icon">🔊</span>
+                <span class="hidden md:inline">SUARA</span>
+            </button>
+            <button onclick="game.toggleFullscreen()" class="bg-sky-700 hover:bg-sky-600 text-white p-1.5 md:p-2 rounded-xl border-2 border-sky-400 text-xs font-bold flex items-center gap-1 transition">
+                <span>🖥️</span>
+                <span class="hidden md:inline">LAYAR PENUH</span>
+            </button>
+            <button onclick="game.showHomeModal()" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-xl border-2 border-red-300 text-xs font-bold transition">
+                🏠 HOME
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col justify-center items-center p-2 md:p-3 overflow-hidden">
+
+        <!-- 1. START / SETUP SCREEN -->
+        <section id="screen-setup" class="w-full max-w-4xl bg-white/95 rounded-3xl p-4 md:p-6 shadow-2xl border-4 border-sky-300 backdrop-blur my-auto">
+            <div class="text-center mb-4">
+                <span class="bg-sky-100 text-sky-800 text-xs font-black px-3 py-1 rounded-full border border-sky-300">
+                    Bahasa Indonesia Kelas 5 SD
+                </span>
+                <h2 class="font-heading text-2xl md:text-4xl text-sky-600 mt-1 drop-shadow-sm">
+                    LOMBA RENANG KATA
+                </h2>
+                <p class="text-slate-600 text-xs md:text-sm font-bold mt-0.5">
+                    Adu Cepat Merangkai Kalimat Tunggal & Majemuk!
+                </p>
+            </div>
+
+            <!-- Player Setup Form -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Player 1 Config -->
+                <div class="bg-sky-50 p-3 rounded-2xl border-2 border-sky-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-black text-sky-700 text-base">🚩 PEMAIN 1</span>
+                        <span class="text-[10px] bg-sky-200 text-sky-800 px-2 py-0.5 rounded font-bold">Jalur Kiri</span>
+                    </div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5">NAMA PEMAIN</label>
+                    <input type="text" id="p1-name" value="Siswa 1" class="w-full px-2.5 py-1.5 rounded-xl border-2 border-sky-300 font-bold text-slate-700 text-xs md:text-sm focus:outline-none focus:border-sky-500 mb-2">
+                    
+                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5">PILIH AVATAR</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="game.setAvatar(1, 'boy')" id="p1-btn-boy" class="avatar-select-btn p-1.5 bg-white rounded-xl border-2 border-sky-400 flex flex-col items-center hover:bg-sky-100 transition ring-2 ring-sky-400">
+                            <span class="text-2xl">👦</span>
+                            <span class="text-[10px] font-bold text-slate-600">Laki-laki</span>
+                        </button>
+                        <button type="button" onclick="game.setAvatar(1, 'girl')" id="p1-btn-girl" class="avatar-select-btn p-1.5 bg-white rounded-xl border-2 border-slate-200 flex flex-col items-center hover:bg-sky-100 transition">
+                            <span class="text-2xl">👧</span>
+                            <span class="text-[10px] font-bold text-slate-600">Perempuan</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Player 2 Config -->
+                <div class="bg-amber-50 p-3 rounded-2xl border-2 border-amber-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-black text-amber-700 text-base">🚩 PEMAIN 2</span>
+                        <span class="text-[10px] bg-amber-200 text-amber-800 px-2 py-0.5 rounded font-bold">Jalur Kanan</span>
+                    </div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5">NAMA PEMAIN</label>
+                    <input type="text" id="p2-name" value="Siswa 2" class="w-full px-2.5 py-1.5 rounded-xl border-2 border-amber-300 font-bold text-slate-700 text-xs md:text-sm focus:outline-none focus:border-amber-500 mb-2">
+                    
+                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5">PILIH AVATAR</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="game.setAvatar(2, 'boy')" id="p2-btn-boy" class="avatar-select-btn p-1.5 bg-white rounded-xl border-2 border-slate-200 flex flex-col items-center hover:bg-amber-100 transition">
+                            <span class="text-2xl">👦</span>
+                            <span class="text-[10px] font-bold text-slate-600">Laki-laki</span>
+                        </button>
+                        <button type="button" onclick="game.setAvatar(2, 'girl')" id="p2-btn-girl" class="avatar-select-btn p-1.5 bg-white rounded-xl border-2 border-amber-400 flex flex-col items-center hover:bg-amber-100 transition ring-2 ring-amber-400">
+                            <span class="text-2xl">👧</span>
+                            <span class="text-[10px] font-bold text-slate-600">Perempuan</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Difficulty Selector -->
+            <div class="mb-4">
+                <label class="block text-center font-black text-xs md:text-sm text-slate-700 mb-1.5">PILIH TINGKAT KESULITAN SOAL</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="game.setDifficulty('easy')" id="diff-easy" class="diff-btn bg-emerald-100 border-2 border-emerald-400 text-emerald-800 p-2 rounded-2xl font-black text-xs hover:bg-emerald-200 transition text-center shadow ring-2 ring-emerald-400">
+                        🟢 MUDAH
+                        <div class="text-[9px] md:text-[10px] font-normal">Kata hubung sederhana (dan, atau, tetapi, serta)</div>
+                    </button>
+                    <button type="button" onclick="game.setDifficulty('medium')" id="diff-medium" class="diff-btn bg-amber-100 border-2 border-slate-300 text-amber-800 p-2 rounded-2xl font-black text-xs hover:bg-amber-200 transition text-center">
+                        🟡 SEDANG
+                        <div class="text-[9px] md:text-[10px] font-normal">Konjungsi Konteks (karena, lalu, kemudian, sehingga)</div>
+                    </button>
+                    <button type="button" onclick="game.setDifficulty('hard')" id="diff-hard" class="diff-btn bg-rose-100 border-2 border-slate-300 text-rose-800 p-2 rounded-2xl font-black text-xs hover:bg-rose-200 transition text-center">
+                        🔴 SULIT
+                        <div class="text-[9px] md:text-[10px] font-normal">Analisis Kalimat Tunggal & Majemuk</div>
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="game.startRace()" class="w-full bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-500 hover:from-yellow-500 hover:to-amber-600 text-sky-950 font-heading text-lg md:text-2xl py-3 rounded-2xl shadow-xl border-b-4 border-amber-700 transition transform active:scale-95 flex items-center justify-center gap-2">
+                🚀 MULAI PERLOMBAAN!
+            </button>
+        </section>
+
+        <!-- 2. GAMEPLAY SCREEN (SPLIT SCREEN FOR P1 & P2) -->
+        <section id="screen-game" class="w-full max-w-7xl hidden flex-col h-full justify-between gap-2 overflow-hidden">
+            
+            <!-- Swimming Pool Visual Board -->
+            <div class="bg-sky-800 p-2 md:p-3 rounded-2xl shadow-xl border-2 md:border-4 border-sky-400 shrink-0">
+                <div class="flex justify-between items-center text-white mb-1 px-1">
+                    <span class="font-black text-[10px] md:text-xs text-yellow-300 flex items-center gap-1">
+                        🏁 LINTASAN PERLOMBAAN RENANG (10 SOAL)
+                    </span>
+                    <span id="difficulty-badge" class="bg-sky-600 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        Tingkat: MUDAH
+                    </span>
+                </div>
+
+                <!-- Swimming Pool -->
+                <div class="water-bg rounded-xl p-1.5 md:p-2 border border-sky-200 relative overflow-hidden shadow-inner">
+                    <!-- Pool Decor Ropes -->
+                    <div class="lane-divider my-1 opacity-80"></div>
+
+                    <!-- Lane 1: Player 1 -->
+                    <div class="relative h-11 md:h-14 bg-sky-400/30 rounded-lg mb-1 border border-white/20 flex items-center px-2">
+                        <div class="absolute left-1 font-black text-[10px] text-white bg-sky-900/70 px-1.5 py-0.5 rounded z-10">
+                            P1: <span id="pool-p1-name">Siswa 1</span>
+                        </div>
+                        <!-- Swimmer 1 -->
+                        <div id="swimmer-1" class="swimmer-container absolute left-2 flex items-center space-x-1 transition-all duration-500">
+                            <span id="p1-avatar-icon" class="text-2xl md:text-3xl swimming-anim inline-block filter drop-shadow">👦</span>
+                            <div class="bg-white/90 text-sky-900 font-extrabold text-[9px] md:text-[10px] px-1.5 py-0.2 rounded-full shadow border border-sky-300">
+                                <span id="p1-progress-txt">0/10</span>
+                            </div>
+                        </div>
+                        <div class="absolute right-2 font-black text-yellow-300 text-xs md:text-sm opacity-80">🏁 FINISH</div>
+                    </div>
+
+                    <div class="lane-divider my-1 opacity-80"></div>
+
+                    <!-- Lane 2: Player 2 -->
+                    <div class="relative h-11 md:h-14 bg-amber-400/20 rounded-lg border border-white/20 flex items-center px-2">
+                        <div class="absolute left-1 font-black text-[10px] text-white bg-amber-900/70 px-1.5 py-0.5 rounded z-10">
+                            P2: <span id="pool-p2-name">Siswa 2</span>
+                        </div>
+                        <!-- Swimmer 2 -->
+                        <div id="swimmer-2" class="swimmer-container absolute left-2 flex items-center space-x-1 transition-all duration-500">
+                            <span id="p2-avatar-icon" class="text-2xl md:text-3xl swimming-anim inline-block filter drop-shadow">👧</span>
+                            <div class="bg-white/90 text-amber-900 font-extrabold text-[9px] md:text-[10px] px-1.5 py-0.2 rounded-full shadow border border-amber-300">
+                                <span id="p2-progress-txt">0/10</span>
+                            </div>
+                        </div>
+                        <div class="absolute right-2 font-black text-yellow-300 text-xs md:text-sm opacity-80">🏁 FINISH</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Split Question Area -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 flex-grow overflow-hidden">
+                
+                <!-- Player 1 Question Panel -->
+                <div id="p1-panel" class="bg-white rounded-2xl p-2.5 md:p-3 shadow-lg border-2 md:border-4 border-sky-400 flex flex-col justify-between overflow-hidden">
+                    <div class="flex flex-col h-full justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="bg-sky-500 text-white font-black px-2 py-0.5 rounded-lg text-[10px] md:text-xs">
+                                        PEMAIN 1
+                                    </span>
+                                    <span id="p1-card-name" class="font-bold text-slate-700 text-xs md:text-sm truncate max-w-[100px] md:max-w-[150px]">Siswa 1</span>
+                                </div>
+                                <span id="p1-score-tag" class="bg-yellow-100 text-yellow-800 font-black px-2 py-0.5 rounded-lg text-[10px] md:text-xs border border-yellow-300">
+                                    Skor: 0
+                                </span>
+                            </div>
+
+                            <!-- Question Box -->
+                            <div class="bg-slate-50 p-2 md:p-2.5 rounded-xl border border-slate-200 mb-2 min-h-[60px] md:min-h-[75px] flex flex-col justify-center">
+                                <div class="flex justify-between items-center mb-0.5">
+                                    <span class="text-[10px] font-bold text-sky-600 block" id="p1-q-num">Soal 1 dari 10</span>
+                                    <span id="p1-timer-text" class="text-[10px] font-black text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-200">⏱️ 15s</span>
+                                </div>
+                                <!-- 15s Timer Bar -->
+                                <div class="w-full bg-slate-200 h-1.5 rounded-full mb-1 overflow-hidden">
+                                    <div id="p1-timer-bar" class="timer-bar h-full bg-sky-500 w-full"></div>
+                                </div>
+                                <p id="p1-question" class="text-slate-800 font-extrabold text-xs md:text-sm leading-snug">
+                                    Memuat Soal...
+                                </p>
+                            </div>
+
+                            <!-- Options Grid (4 Options) -->
+                            <div id="p1-options" class="grid grid-cols-2 gap-1.5 mb-1.5">
+                                <!-- Options injected dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Feedback Box -->
+                        <div id="p1-feedback" class="hidden p-2 rounded-xl text-[10px] md:text-xs font-bold transition"></div>
+                    </div>
+                </div>
+
+                <!-- Player 2 Question Panel -->
+                <div id="p2-panel" class="bg-white rounded-2xl p-2.5 md:p-3 shadow-lg border-2 md:border-4 border-amber-400 flex flex-col justify-between overflow-hidden">
+                    <div class="flex flex-col h-full justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="bg-amber-500 text-white font-black px-2 py-0.5 rounded-lg text-[10px] md:text-xs">
+                                        PEMAIN 2
+                                    </span>
+                                    <span id="p2-card-name" class="font-bold text-slate-700 text-xs md:text-sm truncate max-w-[100px] md:max-w-[150px]">Siswa 2</span>
+                                </div>
+                                <span id="p2-score-tag" class="bg-yellow-100 text-yellow-800 font-black px-2 py-0.5 rounded-lg text-[10px] md:text-xs border border-yellow-300">
+                                    Skor: 0
+                                </span>
+                            </div>
+
+                            <!-- Question Box -->
+                            <div class="bg-slate-50 p-2 md:p-2.5 rounded-xl border border-slate-200 mb-2 min-h-[60px] md:min-h-[75px] flex flex-col justify-center">
+                                <div class="flex justify-between items-center mb-0.5">
+                                    <span class="text-[10px] font-bold text-amber-600 block" id="p2-q-num">Soal 1 dari 10</span>
+                                    <span id="p2-timer-text" class="text-[10px] font-black text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-200">⏱️ 15s</span>
+                                </div>
+                                <!-- 15s Timer Bar -->
+                                <div class="w-full bg-slate-200 h-1.5 rounded-full mb-1 overflow-hidden">
+                                    <div id="p2-timer-bar" class="timer-bar h-full bg-amber-500 w-full"></div>
+                                </div>
+                                <p id="p2-question" class="text-slate-800 font-extrabold text-xs md:text-sm leading-snug">
+                                    Memuat Soal...
+                                </p>
+                            </div>
+
+                            <!-- Options Grid (4 Options) -->
+                            <div id="p2-options" class="grid grid-cols-2 gap-1.5 mb-1.5">
+                                <!-- Options injected dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Feedback Box -->
+                        <div id="p2-feedback" class="hidden p-2 rounded-xl text-[10px] md:text-xs font-bold transition"></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 3. RESULT / PODIUM SCREEN -->
+        <section id="screen-result" class="w-full max-w-4xl bg-white/95 rounded-3xl p-4 md:p-6 shadow-2xl border-4 border-yellow-400 text-center hidden my-auto">
+            <h2 class="font-heading text-2xl md:text-4xl text-yellow-500 mb-1 drop-shadow">
+                🏆 HASIL PERLOMBAAN 🏆
+            </h2>
+            <p id="winner-announcement" class="text-base md:text-xl font-black text-slate-700 mb-4">
+                Selamat kepada Pemenang!
+            </p>
+
+            <!-- Score Comparison Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <!-- P1 Result -->
+                <div id="res-card-p1" class="p-3 rounded-2xl border-2 md:border-4 border-sky-300 bg-sky-50 flex flex-col justify-between">
+                    <div>
+                        <span class="text-2xl" id="res-avatar-p1">👦</span>
+                        <h3 class="font-black text-base text-sky-800" id="res-name-p1">Pemain 1</h3>
+                        <div class="text-2xl md:text-3xl font-heading text-sky-600 my-1" id="res-score-p1">0 Poin</div>
+                        <div class="text-xs font-bold text-slate-600 space-y-0.5">
+                            <p>Jawaban Benar: <span id="res-correct-p1" class="text-emerald-600 font-black">0</span> / 10</p>
+                            <p>Akurasi: <span id="res-acc-p1" class="font-black">0%</span></p>
+                            <p>Waktu Tempuh: ⏱️ <span id="res-time-p1" class="font-black text-sky-700">0.00s</span></p>
+                        </div>
+                    </div>
+                    <p id="res-msg-p1" class="mt-2 text-[10px] md:text-xs italic bg-white/80 p-1.5 rounded-xl text-sky-900 border border-sky-200">
+                        Pesan Penyemangat
+                    </p>
+                </div>
+
+                <!-- P2 Result -->
+                <div id="res-card-p2" class="p-3 rounded-2xl border-2 md:border-4 border-amber-300 bg-amber-50 flex flex-col justify-between">
+                    <div>
+                        <span class="text-2xl" id="res-avatar-p2">👧</span>
+                        <h3 class="font-black text-base text-amber-800" id="res-name-p2">Pemain 2</h3>
+                        <div class="text-2xl md:text-3xl font-heading text-amber-600 my-1" id="res-score-p2">0 Poin</div>
+                        <div class="text-xs font-bold text-slate-600 space-y-0.5">
+                            <p>Jawaban Benar: <span id="res-correct-p2" class="text-emerald-600 font-black">0</span> / 10</p>
+                            <p>Akurasi: <span id="res-acc-p2" class="font-black">0%</span></p>
+                            <p>Waktu Tempuh: ⏱️ <span id="res-time-p2" class="font-black text-amber-700">0.00s</span></p>
+                        </div>
+                    </div>
+                    <p id="res-msg-p2" class="mt-2 text-[10px] md:text-xs italic bg-white/80 p-1.5 rounded-xl text-amber-900 border border-amber-200">
+                        Pesan Penyemangat
+                    </p>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex flex-wrap justify-center gap-2">
+                <button onclick="game.showDiscussionModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-2 rounded-xl shadow transition text-xs md:text-sm">
+                    📖 LIHAT PEMBAHASAN SOAL
+                </button>
+                <button onclick="game.restartGame()" class="bg-amber-500 hover:bg-amber-600 text-sky-950 font-black px-4 py-2 rounded-xl shadow transition text-xs md:text-sm">
+                    🔄 MAIN LAGI
+                </button>
+                <button onclick="game.showHomeModal()" class="bg-slate-600 hover:bg-slate-700 text-white font-black px-4 py-2 rounded-xl shadow transition text-xs md:text-sm">
+                    🏠 KEMBALI KE HOME
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- COUNTDOWN OVERLAY -->
+    <div id="modal-countdown" class="fixed inset-0 bg-sky-950/80 backdrop-blur z-50 hidden flex-col justify-center items-center text-white">
+        <span class="text-lg md:text-xl font-bold text-yellow-300 mb-2">BERSIAP DI GARIS START!</span>
+        <div id="countdown-num" class="text-7xl md:text-9xl font-heading text-yellow-400 animate-ping">
+            3
+        </div>
+    </div>
+
+    <!-- DISCUSSION MODAL -->
+    <div id="modal-discussion" class="fixed inset-0 bg-black/70 backdrop-blur z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] p-4 md:p-6 flex flex-col justify-between shadow-2xl border-4 border-indigo-400">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <h3 class="font-heading text-xl md:text-2xl text-indigo-700">📖 PEMBAHASAN MATERI & SOAL</h3>
+                <button onclick="game.closeDiscussionModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-black">&times;</button>
+            </div>
+
+            <div id="discussion-content" class="overflow-y-auto space-y-3 pr-2 text-left text-xs md:text-sm">
+                <!-- Content generated via JavaScript -->
+            </div>
+
+            <div class="mt-3 text-right">
+                <button onclick="game.closeDiscussionModal()" class="bg-indigo-600 text-white font-bold px-5 py-2 rounded-xl hover:bg-indigo-700 transition text-xs md:text-sm">
+                    Tutup Pembahasan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOME CONFIRMATION MODAL -->
+    <div id="modal-confirm" class="fixed inset-0 bg-black/70 backdrop-blur z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 text-center shadow-2xl border-4 border-sky-400">
+            <h3 class="font-heading text-xl text-slate-800 mb-1">Kembali ke Home?</h3>
+            <p class="text-slate-600 text-xs md:text-sm mb-4">Progres permainan saat ini akan hilang. Apakah kamu yakin?</p>
+            <div class="flex justify-center space-x-2">
+                <button onclick="game.confirmHome()" class="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition">
+                    Ya, Kembali
+                </button>
+                <button onclick="game.closeConfirmModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-sky-950 text-sky-200 text-center py-1 text-[10px] md:text-xs font-bold border-t border-sky-800 shrink-0">
+        SDN PAKUHAJI I &copy; 2026 - Media Pembelajaran Interaktif Bahasa Indonesia Kelas 5 SD
+    </footer>
+
+    <script>
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+
+            playClick() {
+                if (this.muted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+
+            playCorrect() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            playWrong() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                
+                // Sound 1: Low descending tone for sinking
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now); // A3
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.6); // Low pitch depth
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.6);
+
+                // Sound 2: Glug-glug underwater bubbles
+                [0.1, 0.25, 0.4].forEach((delay, idx) => {
+                    const bOsc = this.ctx.createOscillator();
+                    const bGain = this.ctx.createGain();
+                    bOsc.type = 'sine';
+                    bOsc.frequency.setValueAtTime(180 + (idx * 50), now + delay);
+                    bOsc.frequency.linearRampToValueAtTime(320 + (idx * 40), now + delay + 0.1);
+                    bGain.gain.setValueAtTime(0.2, now + delay);
+                    bGain.gain.linearRampToValueAtTime(0.01, now + delay + 0.1);
+                    bOsc.connect(bGain);
+                    bGain.connect(this.ctx.destination);
+                    bOsc.start(now + delay);
+                    bOsc.stop(now + delay + 0.1);
+                });
+            }
+
+            playWin() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [400, 500, 600, 800];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.frequency.setValueAtTime(freq, now + (idx * 0.1));
+                    gain.gain.setValueAtTime(0.2, now + (idx * 0.1));
+                    gain.gain.linearRampToValueAtTime(0.01, now + (idx * 0.1) + 0.2);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + (idx * 0.1));
+                    osc.stop(now + (idx * 0.1) + 0.2);
+                });
+            }
+        }
+
+        const QUESTION_BANK = {
+            easy: [
+                {
+                    q: "Siti membaca buku cerita ... Rina menggambar pemandangan.",
+                    options: ["dan", "tetapi", "karena", "sehingga"],
+                    answer: "dan",
+                    exp: "Kata 'dan' digunakan untuk menggabungkan dua klausa yang setara."
+                },
+                {
+                    q: "Kamu ingin membeli es krim ... kue bolu?",
+                    options: ["atau", "dan", "tetapi", "karena"],
+                    answer: "atau",
+                    exp: "Kata 'atau' digunakan untuk menunjukkan pilihan di antara dua hal."
+                },
+                {
+                    q: "Budi ingin bermain bola, ... hujan turun sangat deras.",
+                    options: ["tetapi", "dan", "atau", "sebab"],
+                    answer: "tetapi",
+                    exp: "Kata 'tetapi' digunakan untuk menyatakan pertentangan atau perbedaan."
+                },
+                {
+                    q: "Ayah membaca koran ... Ibu minum teh hangat di teras.",
+                    options: ["dan", "atau", "tetapi", "meskipun"],
+                    answer: "dan",
+                    exp: "Penggabungan dua kegiatan yang dilakukan bersamaan menggunakan kata 'dan'."
+                },
+                {
+                    q: "Adik bingung memilih sepatu warna merah ... warna biru.",
+                    options: ["atau", "dan", "tetapi", "lalu"],
+                    answer: "atau",
+                    exp: "Pilihan antara warna merah dan biru dihubungkan dengan kata 'atau'."
+                },
+                {
+                    q: "Edo anak yang pintar, ... ia tidak pernah sombong.",
+                    options: ["tetapi", "dan", "atau", "karena"],
+                    answer: "tetapi",
+                    exp: "Pernyataan pertentangan nilai positif dihubungkan konjungsi 'tetapi'."
+                },
+                {
+                    q: "Kiki menyukai pelajaran Matematika ... Bahasa Indonesia.",
+                    options: ["serta", "tetapi", "atau", "sehingga"],
+                    answer: "serta",
+                    exp: "Kata 'serta' atau 'dan' dapat digunakan menggabungkan dua hal yang setara."
+                },
+                {
+                    q: "Apakah kita akan pergi sekarang ... menunggu komando Guru?",
+                    options: ["atau", "dan", "tetapi", "kemudian"],
+                    answer: "atau",
+                    exp: "Kalimat pertanyaan yang menawarkan dua pilihan memerlukan konjungsi 'atau'."
+                },
+                {
+                    q: "Rumah Doni besar, ... tamannya kurang terawat.",
+                    options: ["tetapi", "dan", "atau", "lalu"],
+                    answer: "tetapi",
+                    exp: "Kondisi bertolak belakang dihubungkan dengan 'tetapi'."
+                },
+                {
+                    q: "Anisa menyapu lantai ... Dina merapikan meja guru.",
+                    options: ["dan", "atau", "tetapi", "sebab"],
+                    answer: "dan",
+                    exp: "Dua aktivitas setara di dalam kelas dihubungkan oleh 'dan'."
+                }
+            ],
+            medium: [
+                {
+                    q: "Dika tidak masuk sekolah hari ini ... ia sedang sakit demam.",
+                    options: ["karena", "lalu", "kemudian", "atau"],
+                    answer: "karena",
+                    exp: "Kata 'karena' digunakan untuk menjelaskan hubungan sebab-akibat."
+                },
+                {
+                    q: "Rani mengambil handuk, ... ia mengeringkan rambutnya yang basah.",
+                    options: ["lalu", "karena", "atau", "tetapi"],
+                    answer: "lalu",
+                    exp: "Kata 'lalu' menyatakan urutan kejadian berurutan secara langsung."
+                },
+                {
+                    q: "Para peserta bersiap di garis start, ... peluit perlombaan dibunyikan.",
+                    options: ["kemudian", "karena", "tetapi", "atau"],
+                    answer: "kemudian",
+                    exp: "Kata 'kemudian' digunakan untuk mengurutkan peristiwa dalam tahap berikutnya."
+                },
+                {
+                    q: "Tono terlambat sampai di kolam renang ... jalanan macet total.",
+                    options: ["karena", "kemudian", "lalu", "atau"],
+                    answer: "karena",
+                    exp: "Penyebab keterlambatan dijelaskan menggunakan konjungsi kausalitas 'karena'."
+                },
+                {
+                    q: "Siswa kelas 5 SDN Pakuhaji I berbaris rapi, ... mereka masuk ke kelas.",
+                    options: ["lalu", "karena", "atau", "meskipun"],
+                    answer: "lalu",
+                    exp: "Urutan kegiatan berbaris dilanjutkan masuk kelas dihubungkan dengan 'lalu'."
+                },
+                {
+                    q: "Ibu mencuci beras hingga bersih, ... memasaknya di dalam penanak nasi.",
+                    options: ["kemudian", "karena", "tetapi", "atau"],
+                    answer: "kemudian",
+                    exp: "Langkah-langkah memasak beras dilanjutkan dengan kata 'kemudian'."
+                },
+                {
+                    q: "Tanaman di kebun sekolah tumbuh subur ... selalu disiram setiap pagi.",
+                    options: ["karena", "lalu", "kemudian", "tetapi"],
+                    answer: "karena",
+                    exp: "Sebab tanaman subur adalah karena rajin disiram."
+                },
+                {
+                    q: "Atlit renang melakukan pemanasan, ... ia melompat ke dalam kolam.",
+                    options: ["lalu", "karena", "atau", "sebab"],
+                    answer: "lalu",
+                    exp: "Urutan tindakan secara cepat dari pemanasan lalu melompat."
+                },
+                {
+                    q: "Pak Guru memberi arahan, ... seluruh siswa memulai diskusi kelompok.",
+                    options: ["kemudian", "karena", "tetapi", "atau"],
+                    answer: "kemudian",
+                    exp: "Tindakan berikutnya setelah arahan dari guru."
+                },
+                {
+                    q: "Lani mendapat nilai seratus ... ia belajar dengan giat setiap malam.",
+                    options: ["karena", "lalu", "kemudian", "sehingga"],
+                    answer: "karena",
+                    exp: "Penyebab nilai tinggi adalah belajar giat, maka kata penghubungnya adalah 'karena'."
+                }
+            ],
+            hard: [
+                {
+                    q: "Manakah yang merupakan KALIMAT TUNGGAL di bawah ini?",
+                    options: [
+                        "Siswa SDN Pakuhaji I berenang di kolam.",
+                        "Rina berenang dan Edo berlari.",
+                        "Budi ingin berenang tetapi hari hujan.",
+                        "Ibu memasak nasi lalu mencuci piring."
+                    ],
+                    answer: "Siswa SDN Pakuhaji I berenang di kolam.",
+                    exp: "Kalimat tunggal hanya memiliki satu subjek dan satu predikat (satu klausa)."
+                },
+                {
+                    q: "Manakah yang merupakan KALIMAT MAJEMUK di bawah ini?",
+                    options: [
+                        "Siti rajin belajar karena ingin menjadi juara.",
+                        "Ahmad makan roti manis.",
+                        "Ibu membeli buah segar di pasar.",
+                        "Anak-anak bermain di lapangan."
+                    ],
+                    answer: "Siti rajin belajar karena ingin menjadi juara.",
+                    exp: "Kalimat majemuk terdiri dari dua klausa yang dihubungkan kata penghubung (karena)."
+                },
+                {
+                    q: "Perbaiki kalimat ini: 'Doni tetap berangkat sekolah ... ia merasa kurang sehat.'",
+                    options: ["meskipun", "kemudian", "atau", "lalu"],
+                    answer: "meskipun",
+                    exp: "Kata penghubung pertentangan tak bersyarat yang tepat adalah 'meskipun'."
+                },
+                {
+                    q: "'Lani mencuci piring lalu merapikan meja.' Kalimat ini tergolong jenis...",
+                    options: [
+                        "Kalimat Majemuk Setara",
+                        "Kalimat Tunggal",
+                        "Kalimat Tanya",
+                        "Kalimat Perintah"
+                    ],
+                    answer: "Kalimat Majemuk Setara",
+                    exp: "Kalimat ini menghubungkan dua kegiatan berurutan yang setara menggunakan 'lalu'."
+                },
+                {
+                    q: "Pilih kata penghubung yang tepat: 'Budi berlatih keras ... ia memenangkan perlombaan.'",
+                    options: ["sehingga", "tetapi", "atau", "meskipun"],
+                    answer: "sehingga",
+                    exp: "Kata 'sehingga' menyatakan hubungan akibat dari suatu usaha."
+                },
+                {
+                    q: "Kalimat: 'Ibu memasak air di dapur.' Merupakan kalimat...",
+                    options: ["Tunggal", "Majemuk Bertingkat", "Majemuk Setara", "Majemuk Campuran"],
+                    answer: "Tunggal",
+                    exp: "Kalimat ini hanya memiliki satu pola SPOK (Satu klausa)."
+                },
+                {
+                    q: "Gabungkan kalimat ini: (1) Riko memakai kacamata. (2) Riko membaca buku.",
+                    options: [
+                        "Riko memakai kacamata lalu membaca buku.",
+                        "Riko memakai kacamata atau membaca buku.",
+                        "Riko memakai kacamata karena membaca buku.",
+                        "Riko memakai kacamata tetapi membaca buku."
+                    ],
+                    answer: "Riko memakai kacamata lalu membaca buku.",
+                    exp: "Penggabungan urutan logis memakai kacamata lalu membaca buku."
+                },
+                {
+                    q: "Manakah kalimat majemuk dengan hubungan sebab-akibat?",
+                    options: [
+                        "Deni ketiduran karena kelelahan setelah berenang.",
+                        "Deni berenang dan berlari di stadion.",
+                        "Deni ingin berenang tetapi kolam ditutup.",
+                        "Deni memilih es krim atau kue bolu."
+                    ],
+                    answer: "Deni ketiduran karena kelelahan setelah berenang.",
+                    exp: "Penggunaan 'karena' menandakan hubungan sebab-akibat."
+                },
+                {
+                    q: "Kata penghubung yang menyatakan pilihan pada kalimat majemuk adalah...",
+                    options: ["atau", "dan", "sebab", "tetapi"],
+                    answer: "atau",
+                    exp: "Konjungsi 'atau' digunakan untuk memilih di antara dua klausa."
+                },
+                {
+                    q: "Siswa SDN Pakuhaji I belajar Bahasa Indonesia ... mereka memahami struktur kalimat.",
+                    options: ["agar", "tetapi", "atau", "meskipun"],
+                    answer: "agar",
+                    exp: "Kata 'agar' atau 'supaya' digunakan untuk menyatakan hubungan tujuan."
+                }
+            ]
+        };
+
+        class GameEngine {
+            constructor() {
+                this.sound = new SoundFX();
+                
+                // Config
+                this.p1 = { name: "Siswa 1", avatar: "boy", score: 0, correct: 0, currentQ: 0, answered: false, finishTime: null, timer: null, timeLeft: 15 };
+                this.p2 = { name: "Siswa 2", avatar: "girl", score: 0, correct: 0, currentQ: 0, answered: false, finishTime: null, timer: null, timeLeft: 15 };
+                this.difficulty = "easy";
+                
+                // Timers
+                this.startTime = 0;
+                
+                // Active Questions
+                this.p1Questions = [];
+                this.p2Questions = [];
+                
+                // Total Questions per race
+                this.totalQuestions = 10;
+                this.questionTimeLimit = 15; // 15 seconds per question
+            }
+
+            setAvatar(player, gender) {
+                this.sound.playClick();
+                if (player === 1) {
+                    this.p1.avatar = gender;
+                    document.getElementById('p1-btn-boy').classList.toggle('ring-2', gender === 'boy');
+                    document.getElementById('p1-btn-boy').classList.toggle('ring-sky-400', gender === 'boy');
+                    document.getElementById('p1-btn-girl').classList.toggle('ring-2', gender === 'girl');
+                    document.getElementById('p1-btn-girl').classList.toggle('ring-sky-400', gender === 'girl');
+                } else {
+                    this.p2.avatar = gender;
+                    document.getElementById('p2-btn-boy').classList.toggle('ring-2', gender === 'boy');
+                    document.getElementById('p2-btn-boy').classList.toggle('ring-amber-400', gender === 'boy');
+                    document.getElementById('p2-btn-girl').classList.toggle('ring-2', gender === 'girl');
+                    document.getElementById('p2-btn-girl').classList.toggle('ring-amber-400', gender === 'girl');
+                }
+            }
+
+            setDifficulty(diff) {
+                this.sound.playClick();
+                this.difficulty = diff;
+                
+                const buttons = {
+                    easy: document.getElementById('diff-easy'),
+                    medium: document.getElementById('diff-medium'),
+                    hard: document.getElementById('diff-hard')
+                };
+
+                Object.keys(buttons).forEach(k => {
+                    if (k === diff) {
+                        buttons[k].classList.add('ring-2', 'ring-offset-1');
+                        if (k==='easy') buttons[k].classList.add('ring-emerald-400');
+                        if (k==='medium') buttons[k].classList.add('ring-amber-400');
+                        if (k==='hard') buttons[k].classList.add('ring-rose-400');
+                    } else {
+                        buttons[k].classList.remove('ring-2', 'ring-offset-1', 'ring-emerald-400', 'ring-amber-400', 'ring-rose-400');
+                    }
+                });
+            }
+
+            toggleAudio() {
+                this.sound.muted = !this.sound.muted;
+                document.getElementById('audio-icon').innerText = this.sound.muted ? '🔇' : '🔊';
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log("Fullscreen restriction:", err);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            shuffleArray(array) {
+                return [...array].sort(() => Math.random() - 0.5);
+            }
+
+            stopPlayerTimer(player) {
+                const playerData = player === 1 ? this.p1 : this.p2;
+                if (playerData.timer) {
+                    clearInterval(playerData.timer);
+                    playerData.timer = null;
+                }
+            }
+
+            startPlayerTimer(player) {
+                this.stopPlayerTimer(player);
+
+                const playerData = player === 1 ? this.p1 : this.p2;
+                const prefix = player === 1 ? 'p1' : 'p2';
+                playerData.timeLeft = this.questionTimeLimit;
+
+                const timerText = document.getElementById(`${prefix}-timer-text`);
+                const timerBar = document.getElementById(`${prefix}-timer-bar`);
+
+                const updateUI = () => {
+                    if (timerText) timerText.innerText = `⏱️ ${playerData.timeLeft}s`;
+                    if (timerBar) {
+                        const pct = (playerData.timeLeft / this.questionTimeLimit) * 100;
+                        timerBar.style.width = `${pct}%`;
+                        if (playerData.timeLeft <= 5) {
+                            timerBar.className = "timer-bar h-full bg-rose-500 w-full";
+                        } else {
+                            timerBar.className = `timer-bar h-full ${player === 1 ? 'bg-sky-500' : 'bg-amber-500'} w-full`;
+                        }
+                    }
+                };
+
+                updateUI();
+
+                playerData.timer = setInterval(() => {
+                    playerData.timeLeft--;
+                    updateUI();
+
+                    if (playerData.timeLeft <= 0) {
+                        this.stopPlayerTimer(player);
+                        this.handleTimeOut(player);
+                    }
+                }, 1000);
+            }
+
+            startRace() {
+                this.sound.playClick();
+                
+                // Get player names
+                this.p1.name = document.getElementById('p1-name').value.trim() || "Siswa 1";
+                this.p2.name = document.getElementById('p2-name').value.trim() || "Siswa 2";
+
+                // Reset player stats
+                this.stopPlayerTimer(1);
+                this.stopPlayerTimer(2);
+                this.p1.score = 0; this.p1.correct = 0; this.p1.currentQ = 0; this.p1.answered = false; this.p1.finishTime = null;
+                this.p2.score = 0; this.p2.correct = 0; this.p2.currentQ = 0; this.p2.answered = false; this.p2.finishTime = null;
+
+                // Prepare question banks (shuffle questions)
+                const rawQuestions = QUESTION_BANK[this.difficulty] || QUESTION_BANK.easy;
+                this.p1Questions = this.shuffleArray(rawQuestions).slice(0, this.totalQuestions);
+                this.p2Questions = this.shuffleArray(rawQuestions).slice(0, this.totalQuestions);
+
+                // Update UI Names & Badges
+                document.getElementById('pool-p1-name').innerText = this.p1.name;
+                document.getElementById('pool-p2-name').innerText = this.p2.name;
+                document.getElementById('p1-card-name').innerText = this.p1.name;
+                document.getElementById('p2-card-name').innerText = this.p2.name;
+                
+                document.getElementById('p1-avatar-icon').innerText = this.p1.avatar === 'boy' ? '👦' : '👧';
+                document.getElementById('p2-avatar-icon').innerText = this.p2.avatar === 'boy' ? '👦' : '👧';
+
+                document.getElementById('difficulty-badge').innerText = `Tingkat: ${this.difficulty.toUpperCase()}`;
+
+                // Update Progress text
+                document.getElementById('p1-progress-txt').innerText = `0/${this.totalQuestions}`;
+                document.getElementById('p2-progress-txt').innerText = `0/${this.totalQuestions}`;
+
+                // Reset Swimmer Positions
+                this.updateSwimmerPositions();
+
+                // Show Countdown Modal
+                const cdModal = document.getElementById('modal-countdown');
+                const cdNum = document.getElementById('countdown-num');
+                cdModal.classList.remove('hidden');
+                cdModal.classList.add('flex');
+
+                let count = 3;
+                cdNum.innerText = count;
+
+                const cdInterval = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        cdNum.innerText = count;
+                    } else if (count === 0) {
+                        cdNum.innerText = "MULAI!";
+                    } else {
+                        clearInterval(cdInterval);
+                        cdModal.classList.add('hidden');
+                        cdModal.classList.remove('flex');
+                        
+                        // Show Game Screen
+                        document.getElementById('screen-setup').classList.add('hidden');
+                        document.getElementById('screen-game').classList.remove('hidden');
+                        document.getElementById('screen-game').classList.add('flex');
+
+                        this.startTime = performance.now();
+
+                        // Render first questions
+                        this.renderQuestion(1);
+                        this.renderQuestion(2);
+                    }
+                }, 800);
+            }
+
+            updateSwimmerPositions() {
+                const s1 = document.getElementById('swimmer-1');
+                const s2 = document.getElementById('swimmer-2');
+
+                // Progress based on CORRECT answers
+                const pct1 = Math.min(85, (this.p1.correct / this.totalQuestions) * 80 + 2);
+                const pct2 = Math.min(85, (this.p2.correct / this.totalQuestions) * 80 + 2);
+
+                s1.style.left = `${pct1}%`;
+                s2.style.left = `${pct2}%`;
+
+                document.getElementById('p1-progress-txt').innerText = `${this.p1.correct}/${this.totalQuestions}`;
+                document.getElementById('p2-progress-txt').innerText = `${this.p2.correct}/${this.totalQuestions}`;
+
+                document.getElementById('p1-score-tag').innerText = `Skor: ${this.p1.score}`;
+                document.getElementById('p2-score-tag').innerText = `Skor: ${this.p2.score}`;
+            }
+
+            handleTimeOut(player) {
+                const playerData = player === 1 ? this.p1 : this.p2;
+                const questions = player === 1 ? this.p1Questions : this.p2Questions;
+                if (playerData.answered) return;
+
+                const currentObj = questions[playerData.currentQ];
+                
+                // Trigger answer handler with timeout
+                this.handleAnswer(player, null, currentObj, null, true);
+            }
+
+            renderQuestion(player) {
+                this.stopPlayerTimer(player);
+
+                const playerData = player === 1 ? this.p1 : this.p2;
+                const questions = player === 1 ? this.p1Questions : this.p2Questions;
+                const prefix = player === 1 ? 'p1' : 'p2';
+
+                if (playerData.currentQ >= this.totalQuestions) {
+                    if (playerData.finishTime === null) {
+                        playerData.finishTime = (performance.now() - this.startTime) / 1000;
+                    }
+                    this.renderFinishedPanel(player);
+                    return;
+                }
+
+                const currentObj = questions[playerData.currentQ];
+                playerData.answered = false;
+
+                document.getElementById(`${prefix}-q-num`).innerText = `Soal ${playerData.currentQ + 1} dari ${this.totalQuestions}`;
+                document.getElementById(`${prefix}-question`).innerText = currentObj.q;
+
+                // Clear Feedback
+                const fbBox = document.getElementById(`${prefix}-feedback`);
+                fbBox.className = "hidden p-2 rounded-xl text-[10px] md:text-xs font-bold transition";
+                fbBox.innerText = "";
+
+                // Options Container
+                const optContainer = document.getElementById(`${prefix}-options`);
+                optContainer.innerHTML = "";
+
+                // Randomize / Shuffle Option Order for each question
+                const shuffledOptions = this.shuffleArray(currentObj.options);
+                const labels = ['A', 'B', 'C', 'D'];
+
+                shuffledOptions.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = `w-full text-left p-1.5 md:p-2 rounded-xl border font-bold text-xs md:text-sm transition hover:bg-slate-100 flex items-center justify-between border-slate-300 text-slate-700 active:scale-98 leading-tight`;
+                    btn.innerHTML = `<span class="truncate"><strong class="text-sky-600 font-black mr-1">${labels[idx]}.</strong>${opt}</span>`;
+                    btn.onclick = () => this.handleAnswer(player, opt, currentObj, btn, false);
+                    optContainer.appendChild(btn);
+                });
+
+                // Start 15-second timer for this question
+                this.startPlayerTimer(player);
+            }
+
+            renderFinishedPanel(player) {
+                this.stopPlayerTimer(player);
+
+                const playerData = player === 1 ? this.p1 : this.p2;
+                const prefix = player === 1 ? 'p1' : 'p2';
+                const name = player === 1 ? this.p1.name : this.p2.name;
+                const timeText = playerData.finishTime ? `${playerData.finishTime.toFixed(2)} detik` : "";
+
+                document.getElementById(`${prefix}-q-num`).innerText = "SELESAI!";
+                document.getElementById(`${prefix}-timer-text`).innerText = "⏱️ --";
+                document.getElementById(`${prefix}-timer-bar`).style.width = "0%";
+                document.getElementById(`${prefix}-question`).innerText = `🏁 ${name} telah mencapai Garis Finish! (${timeText})`;
+                document.getElementById(`${prefix}-options`).innerHTML = `
+                    <div class="col-span-2 p-3 bg-emerald-50 text-emerald-800 rounded-xl text-center font-black border border-emerald-300 text-xs">
+                        Menunggu pemain lain menyelesaikan soal...
+                    </div>
+                `;
+
+                this.checkGameCompletion();
+            }
+
+            handleAnswer(player, selectedOpt, qData, btnElement, isTimeOut = false) {
+                const playerData = player === 1 ? this.p1 : this.p2;
+                if (playerData.answered) return; // Prevent double taps
+
+                this.stopPlayerTimer(player);
+                playerData.answered = true;
+                const prefix = player === 1 ? 'p1' : 'p2';
+                const fbBox = document.getElementById(`${prefix}-feedback`);
+                const swimmer = document.getElementById(`swimmer-${player}`);
+
+                const isCorrect = !isTimeOut && (selectedOpt === qData.answer);
+
+                // Disable all option buttons in this panel
+                const optButtons = document.getElementById(`${prefix}-options`).querySelectorAll('button');
+                optButtons.forEach(b => b.disabled = true);
+
+                if (isCorrect) {
+                    this.sound.playCorrect();
+                    playerData.score += 10;
+                    playerData.correct += 1;
+
+                    if (btnElement) {
+                        btnElement.classList.remove('border-slate-300');
+                        btnElement.classList.add('border-emerald-500', 'bg-emerald-100', 'text-emerald-900');
+                    }
+
+                    fbBox.classList.remove('hidden');
+                    fbBox.classList.add('bg-emerald-100', 'text-emerald-900', 'border', 'border-emerald-300');
+                    fbBox.innerHTML = `✅ <strong>KEREEEN! Jawaban Benar!</strong><br><span class="font-normal">${qData.exp}</span>`;
+
+                    // Advance question index on correct answer
+                    playerData.currentQ += 1;
+
+                    // Splash animation
+                    swimmer.classList.add('splash-anim');
+                    setTimeout(() => swimmer.classList.remove('splash-anim'), 500);
+
+                } else {
+                    this.sound.playWrong();
+
+                    if (btnElement) {
+                        btnElement.classList.remove('border-slate-300');
+                        btnElement.classList.add('border-rose-500', 'bg-rose-100', 'text-rose-900');
+                    }
+
+                    fbBox.classList.remove('hidden');
+                    fbBox.classList.add('bg-rose-100', 'text-rose-900', 'border', 'border-rose-300');
+                    if (isTimeOut) {
+                        fbBox.innerHTML = `⏰ <strong>WAKTU HABIS! (Tenggelam)</strong><br><span class="font-normal">Jawaban benar: <strong>${qData.answer}</strong>. ${qData.exp}</span>`;
+                    } else {
+                        fbBox.innerHTML = `🫧 <strong>BYUUR! Jawaban Salah (Tenggelam)!</strong><br><span class="font-normal">Jawaban benar: <strong>${qData.answer}</strong>. ${qData.exp}</span>`;
+                    }
+
+                    // Swimmer sinks deep underwater without advancing position
+                    swimmer.classList.remove('sink-anim');
+                    void swimmer.offsetWidth; // Force reflow
+                    swimmer.classList.add('sink-anim');
+
+                    setTimeout(() => swimmer.classList.remove('sink-anim'), 1600);
+                }
+
+                // Update swimmer lane visual position
+                this.updateSwimmerPositions();
+
+                // Next question delay
+                setTimeout(() => {
+                    this.renderQuestion(player);
+                }, 2200);
+            }
+
+            checkGameCompletion() {
+                if (this.p1.currentQ >= this.totalQuestions && this.p2.currentQ >= this.totalQuestions) {
+                    this.stopPlayerTimer(1);
+                    this.stopPlayerTimer(2);
+                    setTimeout(() => {
+                        this.showResults();
+                    }, 1000);
+                }
+            }
+
+            showResults() {
+                this.sound.playWin();
+
+                // Bonus for finishing
+                this.p1.score += 10;
+                this.p2.score += 10;
+
+                const p1Time = this.p1.finishTime || 0;
+                const p2Time = this.p2.finishTime || 0;
+
+                document.getElementById('screen-game').classList.add('hidden');
+                document.getElementById('screen-game').classList.remove('flex');
+                document.getElementById('screen-result').classList.remove('hidden');
+
+                // Fill Result Cards
+                document.getElementById('res-name-p1').innerText = this.p1.name;
+                document.getElementById('res-avatar-p1').innerText = this.p1.avatar === 'boy' ? '👦' : '👧';
+                document.getElementById('res-score-p1').innerText = `${this.p1.score} Poin`;
+                document.getElementById('res-correct-p1').innerText = this.p1.correct;
+                document.getElementById('res-acc-p1').innerText = `${Math.round((this.p1.correct / this.totalQuestions) * 100)}%`;
+                document.getElementById('res-time-p1').innerText = `${p1Time.toFixed(2)} detik`;
+
+                document.getElementById('res-name-p2').innerText = this.p2.name;
+                document.getElementById('res-avatar-p2').innerText = this.p2.avatar === 'boy' ? '👦' : '👧';
+                document.getElementById('res-score-p2').innerText = `${this.p2.score} Poin`;
+                document.getElementById('res-correct-p2').innerText = this.p2.correct;
+                document.getElementById('res-acc-p2').innerText = `${Math.round((this.p2.correct / this.totalQuestions) * 100)}%`;
+                document.getElementById('res-time-p2').innerText = `${p2Time.toFixed(2)} detik`;
+
+                // Determine Winner based on Score first, then Fastest Time
+                const winAnnounce = document.getElementById('winner-announcement');
+                
+                if (this.p1.score > this.p2.score) {
+                    winAnnounce.innerText = `🏆 SELAMAT, ${this.p1.name.toUpperCase()} JUARA 1! 🎉 (Skor Tertinggi)`;
+                    document.getElementById('res-msg-p1').innerText = "SELAMAT, JUARA! 🏆 Kamu hebat dalam merangkai kalimat!";
+                    document.getElementById('res-msg-p2').innerText = "Terus berlatih! Setiap soal membuatmu semakin mahir berbahasa Indonesia.";
+                } else if (this.p2.score > this.p1.score) {
+                    winAnnounce.innerText = `🏆 SELAMAT, ${this.p2.name.toUpperCase()} JUARA 1! 🎉 (Skor Tertinggi)`;
+                    document.getElementById('res-msg-p2').innerText = "SELAMAT, JUARA! 🏆 Kamu hebat dalam merangkai kalimat!";
+                    document.getElementById('res-msg-p1').innerText = "Terus berlatih! Setiap soal membuatmu semakin mahir berbahasa Indonesia.";
+                } else {
+                    // Score is tied: winner decided by fastest completion time!
+                    if (p1Time < p2Time) {
+                        winAnnounce.innerText = `⚡ SELAMAT, ${this.p1.name.toUpperCase()} JUARA 1! 🎉 (Waktu Tercepat: ${p1Time.toFixed(2)}s vs ${p2Time.toFixed(2)}s)`;
+                        document.getElementById('res-msg-p1').innerText = "Luar biasa! Skor sama tetapi kamu berenang lebih cepat ke garis finish!";
+                        document.getElementById('res-msg-p2').innerText = "Pertandingan yang sangat ketat! Kamu selesaikan dengan skor tinggi!";
+                    } else if (p2Time < p1Time) {
+                        winAnnounce.innerText = `⚡ SELAMAT, ${this.p2.name.toUpperCase()} JUARA 1! 🎉 (Waktu Tercepat: ${p2Time.toFixed(2)}s vs ${p1Time.toFixed(2)}s)`;
+                        document.getElementById('res-msg-p2').innerText = "Luar biasa! Skor sama tetapi kamu berenang lebih cepat ke garis finish!";
+                        document.getElementById('res-msg-p1').innerText = "Pertandingan yang sangat ketat! Kamu selesaikan dengan skor tinggi!";
+                    } else {
+                        winAnnounce.innerText = "🤝 HASIL PERLOMBAAN SERI! SKOR DAN WAKTU SAMA PERSIUS!";
+                        document.getElementById('res-msg-p1').innerText = "Kerja bagus! Luar biasa dalam memahami kalimat majemuk!";
+                        document.getElementById('res-msg-p2').innerText = "Kerja bagus! Luar biasa dalam memahami kalimat majemuk!";
+                    }
+                }
+            }
+
+            showDiscussionModal() {
+                this.sound.playClick();
+                const container = document.getElementById('discussion-content');
+                container.innerHTML = "";
+
+                const appendPlayerDiscussion = (pName, pQuestions) => {
+                    const title = document.createElement('h4');
+                    title.className = "font-black text-sm md:text-base text-sky-800 border-b pb-1 mt-2";
+                    title.innerText = `Daftar Soal & Pembahasan (${pName})`;
+                    container.appendChild(title);
+
+                    pQuestions.forEach((q, idx) => {
+                        const card = document.createElement('div');
+                        card.className = "p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs";
+                        card.innerHTML = `
+                            <p class="font-bold text-slate-800">${idx + 1}. ${q.q}</p>
+                            <p class="text-emerald-700 font-extrabold mt-1">Jawaban Tepat: ${q.answer}</p>
+                            <p class="text-slate-600 italic mt-0.5">💡 ${q.exp}</p>
+                        `;
+                        container.appendChild(card);
+                    });
+                };
+
+                appendPlayerDiscussion(this.p1.name, this.p1Questions);
+                appendPlayerDiscussion(this.p2.name, this.p2Questions);
+
+                const modal = document.getElementById('modal-discussion');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            closeDiscussionModal() {
+                this.sound.playClick();
+                const modal = document.getElementById('modal-discussion');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            showHomeModal() {
+                this.sound.playClick();
+                const modal = document.getElementById('modal-confirm');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            closeConfirmModal() {
+                this.sound.playClick();
+                const modal = document.getElementById('modal-confirm');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            confirmHome() {
+                this.stopPlayerTimer(1);
+                this.stopPlayerTimer(2);
+                this.closeConfirmModal();
+                document.getElementById('screen-game').classList.add('hidden');
+                document.getElementById('screen-game').classList.remove('flex');
+                document.getElementById('screen-result').classList.add('hidden');
+                document.getElementById('screen-setup').classList.remove('hidden');
+            }
+
+            restartGame() {
+                this.stopPlayerTimer(1);
+                this.stopPlayerTimer(2);
+                this.sound.playClick();
+                document.getElementById('screen-result').classList.add('hidden');
+                this.startRace();
+            }
+        }
+
+        // Initialize engine on window load
+        let game;
+        window.onload = () => {
+            game = new GameEngine();
+        };
+    </script>
+</body>
+</html>
